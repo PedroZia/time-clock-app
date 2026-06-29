@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Time Clock</title>
+<style>
+  :root {
+    --bg: #f5f3ef;
+    --surface: #ffffff;
+    --text: #1a1a1a;
+    --text-muted: #6b6b6b;
+    --border: #d9d6d0;
+    --accent: #c4946c;
+    --accent-hover: #b8845c;
+    --danger: #b44e4e;
+    --danger-hover: #a04040;
+    --radius: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg: #1a1a1a;
+    --surface: #252525;
+    --text: #ece8e0;
+    --text-muted: #999999;
+    --border: #3a3a3a;
+    --accent: #c4946c;
+    --accent-hover: #d4a47c;
+    --danger: #c45e5e;
+    --danger-hover: #d46e6e;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1a1a1a;
+      --surface: #252525;
+      --text: #ece8e0;
+      --text-muted: #999999;
+      --border: #3a3a3a;
+      --accent: #c4946c;
+      --accent-hover: #d4a47c;
+      --danger: #c45e5e;
+      --danger-hover: #d46e6e;
+    }
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 100dvh;
+  }
+
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  header h1 {
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  .theme-toggle {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .theme-toggle:hover { border-color: var(--accent); }
+
+  /* Form */
+  .form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .form-row.full { grid-template-columns: 1fr; }
+
+  label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  input[type="datetime-local"], input[type="text"], select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.95rem;
+    font-family: inherit;
+  }
+
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #1a1a1a;
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--accent); }
+
+  .btn-danger {
+    background: var(--danger);
+    color: #fff;
+  }
+  .btn-danger:hover { background: var(--danger-hover); }
+
+  .btn-sm {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+
+  .btn-icon {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+  .btn-icon:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* Entry list */
+  .list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .list-header h2 {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-muted);
+  }
+
+  .entries {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 24px;
+  }
+
+  .entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+
+  .entry:last-child { border-bottom: none; }
+
+  .entry-main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .entry-date {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .entry-times {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .entry-desc {
+    font-size: 0.85rem;
+    color: var(--text);
+    margin-top: 2px;
+  }
+
+  .entry-duration {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .entry-actions {
+    display: flex;
+    gap: 4px;
+  }
+
+  .empty {
+    text-align: center;
+    padding: 40px 16px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  /* Footer */
+  .footer {
+    display: flex;
+    gap: 8px;
+  }
+
+  @media (max-width: 480px) {
+    .form-row { grid-template-columns: 1fr; }
+    .entry { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Time Clock</h1>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme"></button>
+  </header>
+
+  <div class="form">
+    <div class="form-row">
+      <div>
+        <label for="start">Start</label>
+        <input type="datetime-local" id="start">
+      </div>
+      <div>
+        <label for="end">End</label>
+        <input type="datetime-local" id="end">
+      </div>
+    </div>
+    <div class="form-row">
+      <div>
+        <label for="preset">Preset</label>
+        <select id="preset">
+          <option value="">Custom...</option>
+          <option>Bug fixes</option>
+          <option>Meetings</option>
+          <option>Code review</option>
+          <option>Documentation</option>
+          <option>Deployment</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div>
+        <label for="description">Description</label>
+        <input type="text" id="description" placeholder="What did you work on?">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" id="submitBtn">Add</button>
+      <button class="btn-secondary" id="cancelBtn" style="display:none">Cancel</button>
+    </div>
+  </div>
+
+  <div class="list-header">
+    <h2 id="listSummary">Entries (0 total)</h2>
+  </div>
+  <div class="entries" id="entryList"></div>
+
+  <div class="footer">
+    <button class="btn-primary" id="exportBtn">Export JSON</button>
+    <button class="btn-secondary" id="importBtn">Import...</button>
+    <input type="file" id="importFile" accept=".json" style="display:none">
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'timeclock-entries';
+const THEME_KEY = 'timeclock-theme';
+const PRESETS = ['Bug fixes','Meetings','Code review','Documentation','Deployment','Other'];
+
+let entries = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+let editingId = null;
+
+// Theme
+const root = document.documentElement;
+const savedTheme = localStorage.getItem(THEME_KEY);
+if (savedTheme) root.setAttribute('data-theme', savedTheme);
+
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const current = root.getAttribute('data-theme');
+  const isDark = current === 'dark' || (!current && matchMedia('(prefers-color-scheme: dark)').matches);
+  root.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  localStorage.setItem(THEME_KEY, isDark ? 'light' : 'dark');
+  updateThemeIcon();
+});
+
+function updateThemeIcon() {
+  const isDark = root.getAttribute('data-theme') === 'dark' ||
+    (!root.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.getElementById('themeToggle').textContent = isDark ? '☀' : '☾';
+}
+updateThemeIcon();
+
+// Preset → description
+document.getElementById('preset').addEventListener('change', e => {
+  if (e.target.value) document.getElementById('description').value = e.target.value;
+});
+
+// Submit
+document.getElementById('submitBtn').addEventListener('click', () => {
+  const start = document.getElementById('start').value;
+  const end = document.getElementById('end').value;
+  const desc = document.getElementById('description').value.trim();
+
+  if (!start || !end || !desc) return alert('All fields required.');
+  if (new Date(end) <= new Date(start)) return alert('End must be after start.');
+
+  if (editingId) {
+    const e = entries.find(x => x.id === editingId);
+    if (e) { e.start = start; e.end = end; e.description = desc; }
+    editingId = null;
+    document.getElementById('submitBtn').textContent = 'Add';
+    document.getElementById('cancelBtn').style.display = 'none';
+  } else {
+    entries.unshift({ id: Date.now(), start, end, description: desc });
+  }
+
+  save();
+  clearForm();
+  render();
+});
+
+document.getElementById('cancelBtn').addEventListener('click', () => {
+  editingId = null;
+  document.getElementById('submitBtn').textContent = 'Add';
+  document.getElementById('cancelBtn').style.display = 'none';
+  clearForm();
+});
+
+function clearForm() {
+  document.getElementById('start').value = '';
+  document.getElementById('end').value = '';
+  document.getElementById('description').value = '';
+  document.getElementById('preset').value = '';
+}
+
+// Render
+function render() {
+  const list = document.getElementById('entryList');
+  if (!entries.length) {
+    list.innerHTML = '<div class="empty">No entries yet</div>';
+    document.getElementById('listSummary').textContent = 'Entries (0 total)';
+    return;
+  }
+
+  let totalMs = 0;
+  let html = '';
+  for (const e of entries) {
+    const s = new Date(e.start);
+    const en = new Date(e.end);
+    const ms = en - s;
+    totalMs += ms;
+
+    const day = s.toLocaleDateString('en-US', { weekday: 'short' });
+    const date = s.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+    const startT = s.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const endT = en.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const dur = fmtDuration(ms);
+
+    html += `<div class="entry">
+      <div class="entry-main">
+        <div class="entry-date">${day} ${date}</div>
+        <div class="entry-times">${startT} → ${endT}</div>
+        <div class="entry-desc">${esc(e.description)}</div>
+      </div>
+      <div class="entry-duration">${dur}</div>
+      <div class="entry-actions">
+        <button class="btn-icon" onclick="editEntry(${e.id})">Edit</button>
+        <button class="btn-icon" onclick="deleteEntry(${e.id})">Del</button>
+      </div>
+    </div>`;
+  }
+
+  list.innerHTML = html;
+  document.getElementById('listSummary').textContent =
+    `Entries (${entries.length} total, ${fmtDuration(totalMs)})`;
+}
+
+function fmtDuration(ms) {
+  const h = Math.floor(ms / 3600000);
+  const m = Math.round((ms % 3600000) / 60000);
+  return `${h}h ${m}m`;
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+window.editEntry = (id) => {
+  const e = entries.find(x => x.id === id);
+  if (!e) return;
+  editingId = id;
+  document.getElementById('start').value = e.start;
+  document.getElementById('end').value = e.end;
+  document.getElementById('description').value = e.description;
+  document.getElementById('preset').value = PRESETS.includes(e.description) ? e.description : '';
+  document.getElementById('submitBtn').textContent = 'Update';
+  document.getElementById('cancelBtn').style.display = '';
+  document.getElementById('start').focus();
+};
+
+window.deleteEntry = (id) => {
+  if (!confirm('Delete this entry?')) return;
+  entries = entries.filter(x => x.id !== id);
+  save();
+  render();
+};
+
+// Persistence
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+}
+
+// Export
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(entries, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `timeclock-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+// Import
+document.getElementById('importBtn').addEventListener('click', () => {
+  document.getElementById('importFile').click();
+});
+
+document.getElementById('importFile').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const incoming = JSON.parse(reader.result);
+      if (!Array.isArray(incoming)) throw 0;
+      const existing = new Set(entries.map(x => x.id));
+      let added = 0;
+      for (const e of incoming) {
+        if (e.id && e.start && e.end && e.description && !existing.has(e.id)) {
+          entries.push(e);
+          added++;
+        }
+      }
+      entries.sort((a, b) => new Date(b.start) - new Date(a.start));
+      save();
+      render();
+      alert(`Imported ${added} new entries.`);
+    } catch { alert('Invalid JSON file.'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+render();
+</script>
+</body>
+</html>
