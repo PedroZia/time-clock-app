@@ -115,6 +115,7 @@ input[type="datetime-local"], input[type="text"], select {
   color: var(--text);
   font-size: 0.95rem;
   font-family: inherit;
+  min-width: 0;
 }
 
 input:focus, select:focus {
