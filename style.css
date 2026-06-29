@@ -108,7 +108,7 @@ label {
 }
 
 input[type="datetime-local"], input[type="text"], select {
-  width: 95%;
+  width: 90%;
   padding: 10px 12px;
   border: 2px solid var(--border);
   background: var(--bg);
