@@ -121,7 +121,6 @@ function render() {
     }
 
     html += `<div class="entry">
-      <input type="checkbox" class="entry-check" data-id="${e.id}">
       <div class="entry-main">
         <div class="entry-date">${day} ${date}</div>
         <div class="entry-times">
@@ -130,6 +129,7 @@ function render() {
         </div>
         <div class="entry-desc">${esc(e.description)}</div>
       </div>
+      <input type="checkbox" class="entry-check" data-id="${e.id}">
       <div class="entry-actions">
         <button class="btn-icon" onclick="editEntry(${e.id})">Edit</button>
         <button class="btn-icon" onclick="deleteEntry(${e.id})">Del</button>
