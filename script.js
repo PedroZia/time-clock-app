@@ -1,6 +1,8 @@
 const STORAGE_KEY = 'timeclock-entries';
 const THEME_KEY = 'timeclock-theme';
-const PRESETS = ['Bug fixes', 'Meetings', 'Code review', 'Documentation', 'Deployment', 'Other'];
+const PRESETS = ['Correção de Bugs', 'Reunião', 'evisão de Código', 'Documentação', 'Personalizado'];
+const NOME_SERVIDOR = "Pedro Paulo Zia"
+const CODIGO_SERVIDOR = "14890"
 
 let entries = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 let editingId = null;
@@ -159,7 +161,7 @@ window.sendEmail = (id) => {
       ${entry.description}
 
       Atenciosamente,
-      Pedro`;
+      ${NOME_SERVIDOR}`;
 
     window.location.href =
         `mailto:${to}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -192,10 +194,19 @@ function save() {
 
 // Export
 document.getElementById('exportBtn').addEventListener('click', () => {
-  const blob = new Blob([JSON.stringify(entries, null, 2)], { type: 'application/json' });
+  const dados = {
+    nomeServidor: NOME_SERVIDOR,
+    codigoServidor: CODIGO_SERVIDOR,
+    registros: entries
+  };
+
+  const blob = new Blob([JSON.stringify(dados, null, 2)], {
+    type: 'application/json'
+  });
+
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `timeclock-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `horas-extras-${NOME_SERVIDOR}-${CODIGO_SERVIDOR}-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(a.href);
 });
@@ -211,7 +222,8 @@ document.getElementById('importFile').addEventListener('change', (e) => {
   const reader = new FileReader();
   reader.onload = () => {
     try {
-      const incoming = JSON.parse(reader.result);
+      const raw = JSON.parse(reader.result);
+      const incoming = Array.isArray(raw) ? raw : raw.registros;
       if (!Array.isArray(incoming)) throw 0;
       const existing = new Set(entries.map(x => x.id));
       let added = 0;
