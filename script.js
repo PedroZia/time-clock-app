@@ -104,6 +104,7 @@ function render() {
       <div class="entry-actions">
         <button class="btn-icon" onclick="editEntry(${e.id})">Edit</button>
         <button class="btn-icon" onclick="deleteEntry(${e.id})">Del</button>
+        <button class="btn-primary" onclick="sendEmail(${e.id})">Email</button>
       </div>
     </div>`;
   }
@@ -112,6 +113,8 @@ function render() {
   document.getElementById('listSummary').textContent =
     `Entries (${entries.length} total, ${fmtDuration(totalMs)})`;
 }
+
+
 
 function fmtDuration(ms) {
   const h = Math.floor(ms / 3600000);
@@ -124,6 +127,39 @@ function esc(s) {
   d.textContent = s;
   return d.innerHTML;
 }
+
+window.sendEmail = (id) => {
+    const entry = entries.find(e => e.id === id);
+    if (!entry) return;
+
+    const start = new Date(entry.start);
+    const end = new Date(entry.end);
+
+    const to = "edimara@indaiatuba.sp.gov.br";
+    const cc = [
+        "fernando.valim@indaiatuba.sp.gov.br",
+        "higor.sombini@indaiatuba.sp.gov.br"
+    ].join(",");
+
+    const subject = `Timesheet - ${start.toLocaleDateString()}`;
+
+    const body = `Bom dia, espero que este e-mail o(a) encontre bem,
+
+      Gostaria de registrar que realizei hora extra.
+
+      De: ${start.toLocaleString()},
+      Até: ${end.toLocaleString()},
+      Duração de: ${fmtDuration(end - start)}.
+
+      Realizado:
+      ${entry.description}
+
+      Atenciosamente,
+      Pedro`;
+
+    window.location.href =
+        `mailto:${to}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+};
 
 window.editEntry = (id) => {
   const e = entries.find(x => x.id === id);
