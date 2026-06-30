@@ -66,7 +66,7 @@ function clearForm() {
   const now = new Date();
   const date = now.toISOString().split('T')[0];
   document.getElementById('start').value = `${date}T16:30`;
-  document.getElementById('end').value = '';
+  document.getElementById('end').value = `${date}T16:45`;
   document.getElementById('description').value = '';
   document.getElementById('preset').value = '';
 }
@@ -97,13 +97,17 @@ function render() {
     html += `<div class="entry">
       <div class="entry-main">
         <div class="entry-date">${day} ${date}</div>
-        <div class="entry-times">${startT} → ${endT}</div>
+        <div class="entry-times">
+            ${startT} → ${endT}
+            <span class="entry-duration">${dur}</span>
+        </div>
         <div class="entry-desc">${esc(e.description)}</div>
       </div>
-      <div class="entry-duration">${dur}</div>
       <div class="entry-actions">
+      <div class="entry-actions-top">
         <button class="btn-icon" onclick="editEntry(${e.id})">Edit</button>
         <button class="btn-icon" onclick="deleteEntry(${e.id})">Del</button>
+      </div>
         <button class="btn-primary" onclick="sendEmail(${e.id})">Email</button>
       </div>
     </div>`;
