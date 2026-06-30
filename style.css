@@ -8,7 +8,6 @@
   --accent-hover: #e63311;
   --danger: #cc0000;
   --danger-hover: #aa0000;
-  --separetor: #343231;
 }
 
 [data-theme="dark"] {
@@ -21,7 +20,6 @@
   --accent-hover: #ff5533;
   --danger: #ff4422;
   --danger-hover: #ff5533;
-  --separetor: #555;
 }
 
 @media (prefers-color-scheme: dark) {
