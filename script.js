@@ -251,7 +251,8 @@ function doEmail() {
   const to = "edmara.garcia@indaiatuba.sp.gov.br";
   const cc = [
     "fernando.valim@indaiatuba.sp.gov.br",
-    "higor.sombini@indaiatuba.sp.gov.br"
+    "higor.sombini@indaiatuba.sp.gov.br",
+    "luiz.alves@indaiatuba.sp.gov.br"
   ].join(",");
 
   const totalMs = selected.reduce((sum, e) => sum + (new Date(e.end) - new Date(e.start)), 0);
