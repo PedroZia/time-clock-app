@@ -1,12 +1,35 @@
 const STORAGE_KEY = 'timeclock-entries';
 const THEME_KEY = 'timeclock-theme';
-const PRESETS = ['Correção de Bugs', 'Reunião', 'evisão de Código', 'Documentação', 'Personalizado'];
-const NOME_SERVIDOR = "Pedro Paulo Zia"
-const CODIGO_SERVIDOR = "14890"
+const CONFIG_KEY = 'timeclock-config';
+const PRESETS = ['Correção de Bugs', 'Reunião', 'Revisão de Código', 'Documentação'];
 
 let entries = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 entries.sort((a, b) => new Date(b.start) - new Date(a.start));
 let editingId = null;
+let currentMonth = '';
+let config = getConfig();
+
+// Config
+function getConfig() {
+  let cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
+  if (!cfg) {
+    cfg = {
+      nome: "Pedro Paulo Zia",
+      codigo: "14890",
+      to: "edmara.garcia@indaiatuba.sp.gov.br",
+      cc: [
+        "fernando.valim@indaiatuba.sp.gov.br",
+        "higor.sombini@indaiatuba.sp.gov.br"
+      ]
+    };
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
+  }
+  return cfg;
+}
+
+function saveConfig() {
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+}
 
 // Theme
 const root = document.documentElement;
@@ -16,7 +39,7 @@ if (savedTheme) root.setAttribute('data-theme', savedTheme);
 function updateThemeIcon() {
   const isDark = root.getAttribute('data-theme') === 'dark' ||
     (!root.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
-  document.getElementById('themeToggle').textContent = isDark ? '☀' : '☾';
+  document.getElementById('themeToggle').textContent = isDark ? '\u2600' : '\u263E';
 }
 
 document.getElementById('themeToggle').addEventListener('click', () => {
@@ -28,6 +51,88 @@ document.getElementById('themeToggle').addEventListener('click', () => {
 });
 
 updateThemeIcon();
+
+// Settings modal
+document.getElementById('settingsBtn').addEventListener('click', openSettings);
+document.getElementById('closeSettingsBtn').addEventListener('click', closeSettings);
+document.getElementById('settingsOverlay').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeSettings();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeSettings();
+});
+
+function openSettings() {
+  document.getElementById('cfgName').value = config.nome;
+  document.getElementById('cfgCode').value = config.codigo;
+  document.getElementById('cfgTo').value = config.to;
+  renderCcFields();
+  document.getElementById('settingsOverlay').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settingsOverlay').classList.remove('open');
+}
+
+function renderCcFields() {
+  const list = document.getElementById('ccList');
+  list.innerHTML = config.cc.map((email, i) =>
+    `<div class="cc-row">
+      <input type="email" value="${esc(email)}" data-index="${i}">
+      <button class="btn-icon" onclick="removeCc(${i})">&#10005;</button>
+    </div>`
+  ).join('');
+}
+
+window.removeCc = (i) => {
+  config.cc.splice(i, 1);
+  renderCcFields();
+};
+
+document.getElementById('addCcBtn').addEventListener('click', () => {
+  config.cc.push('');
+  renderCcFields();
+  const inputs = document.querySelectorAll('#ccList input');
+  inputs[inputs.length - 1].focus();
+});
+
+document.getElementById('saveConfigBtn').addEventListener('click', () => {
+  config.nome = document.getElementById('cfgName').value.trim();
+  config.codigo = document.getElementById('cfgCode').value.trim();
+  config.to = document.getElementById('cfgTo').value.trim();
+  config.cc = [...document.querySelectorAll('#ccList input')].map(i => i.value.trim()).filter(Boolean);
+  saveConfig();
+  closeSettings();
+});
+
+// Filter
+document.getElementById('monthFilter').addEventListener('change', (e) => {
+  currentMonth = e.target.value;
+  render();
+});
+
+function populateMonthFilter() {
+  const months = new Map();
+  for (const e of entries) {
+    const d = new Date(e.start);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const label = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    if (!months.has(key)) months.set(key, label);
+  }
+  const sorted = [...months.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+  const select = document.getElementById('monthFilter');
+  select.innerHTML = '<option value="">All months</option>' +
+    sorted.map(([k, v]) => `<option value="${k}"${k === currentMonth ? ' selected' : ''}>${v}</option>`).join('');
+}
+
+function getFilteredEntries() {
+  if (!currentMonth) return entries;
+  return entries.filter(e => {
+    const d = new Date(e.start);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    return key === currentMonth;
+  });
+}
 
 // Preset → description
 document.getElementById('preset').addEventListener('change', e => {
@@ -68,6 +173,7 @@ document.getElementById('submitBtn').addEventListener('click', () => {
   }
 
   save();
+  populateMonthFilter();
   clearForm();
   render();
 });
@@ -91,56 +197,68 @@ function clearForm() {
 // Render
 function render() {
   const list = document.getElementById('entryList');
-  if (!entries.length) {
+  const filtered = getFilteredEntries();
+  if (!filtered.length) {
     list.innerHTML = '<div class="empty">No entries yet</div>';
     document.getElementById('listSummary').textContent = 'Entries (0 total)';
     updateMenuState();
     return;
   }
 
-  let totalMs = 0;
-  let html = '';
-  let prevDayKey = '';
-  for (const e of entries) {
+  // Group by day
+  const groups = [];
+  let curDay = '';
+  for (const e of filtered) {
     const s = new Date(e.start);
     const en = new Date(e.end);
     const ms = en - s;
-    totalMs += ms;
-
     const day = s.toLocaleDateString('en-US', { weekday: 'short' });
     const date = s.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
     const dayKey = `${day} ${date}`;
-    const startT = s.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-    const endT = en.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-    const dur = fmtDuration(ms);
 
-    if (dayKey !== prevDayKey) {
-      if (prevDayKey) html += '</div>';
-      html += '<div class="day-group">';
-      prevDayKey = dayKey;
+    if (dayKey !== curDay) {
+      groups.push({ dayKey, day, date, entries: [], totalMs: 0 });
+      curDay = dayKey;
     }
-
-    html += `<div class="entry">
-      <div class="entry-main">
-        <div class="entry-date">${day} ${date}</div>
-        <div class="entry-times">
-            ${startT} → ${endT}
-            <span class="entry-duration">${dur}</span>
-        </div>
-        <div class="entry-desc">${esc(e.description)}</div>
-      </div>
-      <input type="checkbox" class="entry-check" data-id="${e.id}">
-      <div class="entry-actions">
-        <button class="btn-icon" onclick="editEntry(${e.id})">Edit</button>
-        <button class="btn-icon" onclick="deleteEntry(${e.id})">Del</button>
-      </div>
-    </div>`;
+    groups[groups.length - 1].entries.push(e);
+    groups[groups.length - 1].totalMs += ms;
   }
-  if (prevDayKey) html += '</div>';
+
+  let totalMs = 0;
+  let html = '';
+  for (const g of groups) {
+    totalMs += g.totalMs;
+    html += `<div class="day-group"><div class="day-header">${g.dayKey} \u2014 ${fmtDuration(g.totalMs)}</div>`;
+    for (const e of g.entries) {
+      const s = new Date(e.start);
+      const en = new Date(e.end);
+      const ms = en - s;
+      const startT = s.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+      const endT = en.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+      const dur = fmtDuration(ms);
+
+      html += `<div class="entry">
+        <input type="checkbox" class="entry-check" data-id="${e.id}">
+        <div class="entry-main">
+          <div class="entry-date">${g.day} ${g.date}</div>
+          <div class="entry-times">
+              ${startT} → ${endT}
+              <span class="entry-duration">${dur}</span>
+          </div>
+          <div class="entry-desc">${esc(e.description)}</div>
+        </div>
+        <div class="entry-actions">
+          <button class="btn-icon" onclick="editEntry(${e.id})">Edit</button>
+          <button class="btn-icon" onclick="deleteEntry(${e.id})">Del</button>
+        </div>
+      </div>`;
+    }
+    html += '</div>';
+  }
 
   list.innerHTML = html;
   document.getElementById('listSummary').textContent =
-    `Entries (${entries.length} total, ${fmtDuration(totalMs)})`;
+    `Entries (${filtered.length} total, ${fmtDuration(totalMs)})`;
   updateMenuState();
 }
 
@@ -179,7 +297,7 @@ function updateMenuState() {
 
 // Select All
 document.getElementById('selectAllBtn').addEventListener('click', () => {
-  const checks = document.querySelectorAll('.entry-check');
+  const checks = document.querySelectorAll('.day-group .entry-check');
   const allChecked = [...checks].every(c => c.checked);
   checks.forEach(c => c.checked = !allChecked);
   document.getElementById('selectAllBtn').textContent = allChecked ? 'Select All' : 'Deselect All';
@@ -213,14 +331,14 @@ function doExportJson() {
   const selected = getSelectedEntries();
   if (!selected.length) return alert('Select at least one entry.');
   const dados = {
-    nomeServidor: NOME_SERVIDOR,
-    codigoServidor: CODIGO_SERVIDOR,
+    nomeServidor: config.nome,
+    codigoServidor: config.codigo,
     registros: selected
   };
   const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `horas-extras-${NOME_SERVIDOR}-${CODIGO_SERVIDOR}-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `horas-extras-${config.nome}-${config.codigo}-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(a.href);
 }
@@ -238,7 +356,7 @@ function doExportCsv() {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `horas-extras-${NOME_SERVIDOR}-${CODIGO_SERVIDOR}-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `horas-extras-${config.nome}-${config.codigo}-${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(a.href);
 }
@@ -248,12 +366,8 @@ function doEmail() {
   if (!selected.length) return alert('Select at least one entry.');
   selected.sort((a, b) => new Date(a.start) - new Date(b.start));
 
-  const to = "edmara.garcia@indaiatuba.sp.gov.br";
-  const cc = [
-    "fernando.valim@indaiatuba.sp.gov.br",
-    "higor.sombini@indaiatuba.sp.gov.br",
-    "luiz.alves@indaiatuba.sp.gov.br"
-  ].join(",");
+  const to = config.to;
+  const cc = config.cc.join(',');
 
   const totalMs = selected.reduce((sum, e) => sum + (new Date(e.end) - new Date(e.start)), 0);
 
@@ -277,7 +391,7 @@ ${lines}
 Total: ${fmtDuration(totalMs)}
 
 Atenciosamente,
-${NOME_SERVIDOR}`;
+${config.nome}`;
 
   window.location.href =
     `mailto:${to}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -300,6 +414,7 @@ window.deleteEntry = (id) => {
   if (!confirm('Delete this entry?')) return;
   entries = entries.filter(x => x.id !== id);
   save();
+  populateMonthFilter();
   render();
 };
 
@@ -328,6 +443,7 @@ document.getElementById('importFile').addEventListener('change', (e) => {
       }
       entries.sort((a, b) => new Date(b.start) - new Date(a.start));
       save();
+      populateMonthFilter();
       render();
       alert(`Imported ${added} new entries.`);
     } catch { alert('Invalid JSON file.'); }
@@ -337,4 +453,5 @@ document.getElementById('importFile').addEventListener('change', (e) => {
 });
 
 clearForm();
+populateMonthFilter();
 render();
