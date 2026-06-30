@@ -48,15 +48,23 @@
   </div>
 
   <div class="list-header">
-    <h2 id="listSummary">Entries (0 total)</h2>
+    <div class="list-header-left">
+      <h2 id="listSummary">Entries (0 total)</h2>
+      <button class="btn-secondary btn-sm" id="selectAllBtn">Select All</button>
+    </div>
+    <div class="hamburger">
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Menu">☰</button>
+      <div class="hamburger-menu" id="hamburgerMenu">
+        <button class="hamburger-item" data-action="exportJson">Export as JSON</button>
+        <button class="hamburger-item" data-action="exportCsv">Export as CSV</button>
+        <button class="hamburger-item" data-action="email">Email Selected</button>
+        <button class="hamburger-item" data-action="import">Import...</button>
+      </div>
+    </div>
   </div>
   <div class="entries" id="entryList"></div>
 
-  <div class="footer">
-    <button class="btn-primary" id="exportBtn">Export JSON</button>
-    <button class="btn-secondary" id="importBtn">Import...</button>
-    <input type="file" id="importFile" accept=".json" style="display:none">
-  </div>
+  <input type="file" id="importFile" accept=".json" style="display:none">
 </div>
 
 <script src="script.js"></script>

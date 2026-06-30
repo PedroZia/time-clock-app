@@ -5,6 +5,7 @@ const NOME_SERVIDOR = "Pedro Paulo Zia"
 const CODIGO_SERVIDOR = "14890"
 
 let entries = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+entries.sort((a, b) => new Date(b.start) - new Date(a.start));
 let editingId = null;
 
 // Theme
@@ -41,6 +42,20 @@ document.getElementById('submitBtn').addEventListener('click', () => {
 
   if (!start || !end || !desc) return alert('All fields required.');
   if (new Date(end) <= new Date(start)) return alert('End must be after start.');
+
+  const conflict = entries.find(e => {
+    if (editingId && e.id === editingId) return false;
+    return start < e.end && end > e.start;
+  });
+  if (conflict) {
+    const cs = new Date(conflict.start);
+    const ce = new Date(conflict.end);
+    const day = cs.toLocaleDateString('en-US', { weekday: 'short' });
+    const date = cs.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+    const st = cs.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const et = ce.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    return alert(`This entry overlaps with:\n\n${day} ${date}, ${st} → ${et}\n${conflict.description}`);
+  }
 
   if (editingId) {
     const e = entries.find(x => x.id === editingId);
@@ -79,11 +94,13 @@ function render() {
   if (!entries.length) {
     list.innerHTML = '<div class="empty">No entries yet</div>';
     document.getElementById('listSummary').textContent = 'Entries (0 total)';
+    updateMenuState();
     return;
   }
 
   let totalMs = 0;
   let html = '';
+  let prevDayKey = '';
   for (const e of entries) {
     const s = new Date(e.start);
     const en = new Date(e.end);
@@ -92,11 +109,19 @@ function render() {
 
     const day = s.toLocaleDateString('en-US', { weekday: 'short' });
     const date = s.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+    const dayKey = `${day} ${date}`;
     const startT = s.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
     const endT = en.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
     const dur = fmtDuration(ms);
 
+    if (dayKey !== prevDayKey) {
+      if (prevDayKey) html += '</div>';
+      html += '<div class="day-group">';
+      prevDayKey = dayKey;
+    }
+
     html += `<div class="entry">
+      <input type="checkbox" class="entry-check" data-id="${e.id}">
       <div class="entry-main">
         <div class="entry-date">${day} ${date}</div>
         <div class="entry-times">
@@ -106,21 +131,23 @@ function render() {
         <div class="entry-desc">${esc(e.description)}</div>
       </div>
       <div class="entry-actions">
-      <div class="entry-actions-top">
         <button class="btn-icon" onclick="editEntry(${e.id})">Edit</button>
         <button class="btn-icon" onclick="deleteEntry(${e.id})">Del</button>
       </div>
-        <button class="btn-mail" onclick="sendEmail(${e.id})">Email</button>
-      </div>
     </div>`;
   }
+  if (prevDayKey) html += '</div>';
 
   list.innerHTML = html;
   document.getElementById('listSummary').textContent =
     `Entries (${entries.length} total, ${fmtDuration(totalMs)})`;
+  updateMenuState();
 }
 
-
+// Toggle menu state on checkbox click
+document.getElementById('entryList').addEventListener('click', (e) => {
+  if (e.target.classList.contains('entry-check')) updateMenuState();
+});
 
 function fmtDuration(ms) {
   const h = Math.floor(ms / 3600000);
@@ -134,38 +161,126 @@ function esc(s) {
   return d.innerHTML;
 }
 
-window.sendEmail = (id) => {
-    const entry = entries.find(e => e.id === id);
-    if (!entry) return;
+function getSelectedEntries() {
+  const checks = document.querySelectorAll('.entry-check:checked');
+  if (!checks.length) return [];
+  const ids = [...checks].map(c => Number(c.dataset.id));
+  return entries.filter(e => ids.includes(e.id));
+}
 
-    const start = new Date(entry.start);
-    const end = new Date(entry.end);
+function updateMenuState() {
+  const checks = document.querySelectorAll('.entry-check:checked');
+  const hasSelection = checks.length > 0;
+  ['exportJson', 'exportCsv', 'email'].forEach(action => {
+    const item = document.querySelector(`.hamburger-item[data-action="${action}"]`);
+    if (item) item.disabled = !hasSelection;
+  });
+}
 
-    const to = "edmara.garcia@indaiatuba.sp.gov.br";
-    const cc = [
-        "fernando.valim@indaiatuba.sp.gov.br",
-        "higor.sombini@indaiatuba.sp.gov.br"
-    ].join(",");
+// Select All
+document.getElementById('selectAllBtn').addEventListener('click', () => {
+  const checks = document.querySelectorAll('.entry-check');
+  const allChecked = [...checks].every(c => c.checked);
+  checks.forEach(c => c.checked = !allChecked);
+  document.getElementById('selectAllBtn').textContent = allChecked ? 'Select All' : 'Deselect All';
+  updateMenuState();
+});
 
-    const subject = `Hora extra - ${start.toLocaleDateString()}`;
+// Hamburger menu
+document.getElementById('hamburgerBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  updateMenuState();
+  document.getElementById('hamburgerMenu').classList.toggle('open');
+});
 
-    const body = `Bom dia, espero que este e-mail o(a) encontre bem,
+document.addEventListener('click', () => {
+  document.getElementById('hamburgerMenu').classList.remove('open');
+});
 
-      Gostaria de registrar que realizei hora extra.
+document.querySelectorAll('.hamburger-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.getElementById('hamburgerMenu').classList.remove('open');
+    const action = item.dataset.action;
+    if (action === 'exportJson') doExportJson();
+    else if (action === 'exportCsv') doExportCsv();
+    else if (action === 'email') doEmail();
+    else if (action === 'import') document.getElementById('importFile').click();
+  });
+});
 
-      De: ${start.toLocaleString()},
-      Até: ${end.toLocaleString()},
-      Duração de: ${fmtDuration(end - start)}.
+// Actions
+function doExportJson() {
+  const selected = getSelectedEntries();
+  if (!selected.length) return alert('Select at least one entry.');
+  const dados = {
+    nomeServidor: NOME_SERVIDOR,
+    codigoServidor: CODIGO_SERVIDOR,
+    registros: selected
+  };
+  const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `horas-extras-${NOME_SERVIDOR}-${CODIGO_SERVIDOR}-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
 
-      Realizado:
-      ${entry.description}
+function doExportCsv() {
+  const selected = getSelectedEntries();
+  if (!selected.length) return alert('Select at least one entry.');
+  const header = 'id,start,end,description,duration_min';
+  const rows = selected.map(e => {
+    const ms = new Date(e.end) - new Date(e.start);
+    const min = Math.round(ms / 60000);
+    return `${e.id},${e.start},${e.end},"${e.description.replace(/"/g, '""')}",${min}`;
+  });
+  const csv = '\ufeff' + header + '\n' + rows.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `horas-extras-${NOME_SERVIDOR}-${CODIGO_SERVIDOR}-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
 
-      Atenciosamente,
-      ${NOME_SERVIDOR}`;
+function doEmail() {
+  const selected = getSelectedEntries();
+  if (!selected.length) return alert('Select at least one entry.');
+  selected.sort((a, b) => new Date(a.start) - new Date(b.start));
 
-    window.location.href =
-        `mailto:${to}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-};
+  const to = "edmara.garcia@indaiatuba.sp.gov.br";
+  const cc = [
+    "fernando.valim@indaiatuba.sp.gov.br",
+    "higor.sombini@indaiatuba.sp.gov.br"
+  ].join(",");
+
+  const totalMs = selected.reduce((sum, e) => sum + (new Date(e.end) - new Date(e.start)), 0);
+
+  let lines = selected.map(e => {
+    const s = new Date(e.start);
+    const en = new Date(e.end);
+    const date = s.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const startT = s.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const endT = en.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const dur = fmtDuration(en - s);
+    return `  ${date}, ${startT} → ${endT} (${dur}): ${e.description}`;
+  }).join("\n");
+
+  const subject = `Horas extras - ${selected.length} registro(s)`;
+  const body = `Bom dia, espero que este e-mail o(a) encontre bem,
+
+Gostaria de registrar as seguintes horas extras:
+
+${lines}
+
+Total: ${fmtDuration(totalMs)}
+
+Atenciosamente,
+${NOME_SERVIDOR}`;
+
+  window.location.href =
+    `mailto:${to}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
 
 window.editEntry = (id) => {
   const e = entries.find(x => x.id === id);
@@ -192,30 +307,7 @@ function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
 }
 
-// Export
-document.getElementById('exportBtn').addEventListener('click', () => {
-  const dados = {
-    nomeServidor: NOME_SERVIDOR,
-    codigoServidor: CODIGO_SERVIDOR,
-    registros: entries
-  };
-
-  const blob = new Blob([JSON.stringify(dados, null, 2)], {
-    type: 'application/json'
-  });
-
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `horas-extras-${NOME_SERVIDOR}-${CODIGO_SERVIDOR}-${new Date().toISOString().slice(0, 10)}.json`;
-  a.click();
-  URL.revokeObjectURL(a.href);
-});
-
 // Import
-document.getElementById('importBtn').addEventListener('click', () => {
-  document.getElementById('importFile').click();
-});
-
 document.getElementById('importFile').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -243,5 +335,5 @@ document.getElementById('importFile').addEventListener('change', (e) => {
   e.target.value = '';
 });
 
-clearForm()
+clearForm();
 render();

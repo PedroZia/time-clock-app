@@ -8,6 +8,7 @@
   --accent-hover: #e63311;
   --danger: #cc0000;
   --danger-hover: #aa0000;
+  --separetor: #343231;
 }
 
 [data-theme="dark"] {
@@ -20,6 +21,7 @@
   --accent-hover: #ff5533;
   --danger: #ff4422;
   --danger-hover: #ff5533;
+  --separetor: #555;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -164,7 +166,7 @@ button {
 
 .btn-icon {
   padding: 6px 10px;
-  background: transparent;
+  background: var(--bg);
   border: 2px solid var(--border);
   color: var(--text-muted);
   text-transform: uppercase;
@@ -172,21 +174,18 @@ button {
 }
 .btn-icon:hover { color: var(--accent); border-color: var(--accent); }
 
-.btn-mail {
-  background: var(--accent);
-  padding: 8px 10px;
-  color: #fff;
-  border: 2px solid var(--accent);
-}
-
-.btn-mail:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
-
 /* Entry list */
 .list-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
+}
+
+.list-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .list-header h2 {
@@ -197,37 +196,43 @@ button {
   letter-spacing: 0.03em;
 }
 
+.list-header .btn-secondary {
+  font-size: 0.75rem;
+  padding: 6px 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 .entries {
-  background: var(--surface);
-  border: 2px solid var(--border);
   margin-bottom: 24px;
+}
+
+.day-group {
+  border: 2px solid var(--border);
+  margin-bottom: 16px;
 }
 
 .entry {
   display: flex;
+  background: var(--surface);
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border-bottom: 2px solid var(--border);
   gap: 12px;
 }
 
 .entry-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
-.entry-actions-top {
-    display: flex;
-    gap: 6px;
+.entry-actions .btn-sm {
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
-
-.entry-actions .btn-primary {
-    width: 100%;
-}
-
-.entry:last-child { border-bottom: none; }
 
 .entry-main {
   flex: 1;
@@ -262,9 +267,36 @@ button {
   white-space: nowrap;
 }
 
-.entry-actions {
+.entry-check {
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
   display: flex;
-  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  font-size: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.entry-check:hover {
+  border-color: var(--accent);
+}
+
+.entry-check:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+  font-size: 14px;
+  color: #fff;
+  font-weight: 700;
+}
+
+.entry-check:checked::after {
+  content: "\2713";
 }
 
 .empty {
@@ -275,10 +307,78 @@ button {
   text-transform: uppercase;
 }
 
-/* Footer */
-.footer {
+/* Hamburger menu */
+.list-actions {
   display: flex;
+  align-items: center;
   gap: 8px;
+}
+
+.hamburger {
+  position: relative;
+}
+
+.hamburger-btn {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  color: var(--text);
+  width: 40px;
+  height: 40px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.hamburger-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.hamburger-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: var(--bg);
+  border: 2px solid var(--border);
+  min-width: 180px;
+  z-index: 100;
+}
+
+.hamburger-menu.open {
+  display: block;
+}
+
+.hamburger-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 16px 16px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.hamburger-item:last-child {
+  border-bottom: none;
+}
+
+.hamburger-item:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.hamburger-item:disabled {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
 }
 
 @media (max-width: 480px) {
