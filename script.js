@@ -63,7 +63,9 @@ document.getElementById('cancelBtn').addEventListener('click', () => {
 });
 
 function clearForm() {
-  document.getElementById('start').value = '';
+  const now = new Date();
+  const date = now.toISOString().split('T')[0];
+  document.getElementById('start').value = `${date}T16:30`;
   document.getElementById('end').value = '';
   document.getElementById('description').value = '';
   document.getElementById('preset').value = '';
@@ -189,4 +191,5 @@ document.getElementById('importFile').addEventListener('change', (e) => {
   e.target.value = '';
 });
 
+clearForm()
 render();
