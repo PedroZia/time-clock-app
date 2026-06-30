@@ -540,4 +540,15 @@ button {
 @media (max-width: 480px) {
   .form-row { grid-template-columns: 1fr; }
   .entry { flex-wrap: wrap; }
+
+  #selectAllBtn {
+    font-size: 0;
+    min-width: 40px;
+    min-height: 40px;
+  }
+  #selectAllBtn::after {
+    font-size: 1rem;
+  }
+  #selectAllBtn[data-state="deselect"]::after { content: "\2610"; }
+  #selectAllBtn[data-state="select"]::after { content: "\2611"; }
 }

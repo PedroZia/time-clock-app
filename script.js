@@ -300,7 +300,9 @@ document.getElementById('selectAllBtn').addEventListener('click', () => {
   const checks = document.querySelectorAll('.day-group .entry-check');
   const allChecked = [...checks].every(c => c.checked);
   checks.forEach(c => c.checked = !allChecked);
-  document.getElementById('selectAllBtn').textContent = allChecked ? 'Select All' : 'Deselect All';
+  const btn = document.getElementById('selectAllBtn');
+  btn.textContent = allChecked ? 'Select All' : 'Deselect All';
+  btn.dataset.state = allChecked ? 'select' : 'deselect';
   updateMenuState();
 });
 
