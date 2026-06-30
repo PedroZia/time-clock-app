@@ -110,7 +110,7 @@ function render() {
         <button class="btn-icon" onclick="editEntry(${e.id})">Edit</button>
         <button class="btn-icon" onclick="deleteEntry(${e.id})">Del</button>
       </div>
-        <button class="btn-primary" onclick="sendEmail(${e.id})">Email</button>
+        <button class="btn-mail" onclick="sendEmail(${e.id})">Email</button>
       </div>
     </div>`;
   }

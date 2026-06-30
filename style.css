@@ -145,6 +145,7 @@ button {
   color: #fff;
   border: 2px solid var(--accent);
 }
+
 .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 
 .btn-secondary {
@@ -163,7 +164,6 @@ button {
 
 .btn-icon {
   padding: 6px 10px;
-  font-size: 0.75rem;
   background: transparent;
   border: 2px solid var(--border);
   color: var(--text-muted);
@@ -171,6 +171,15 @@ button {
   letter-spacing: 0.03em;
 }
 .btn-icon:hover { color: var(--accent); border-color: var(--accent); }
+
+.btn-mail {
+  background: var(--accent);
+  padding: 8px 10px;
+  color: #fff;
+  border: 2px solid var(--accent);
+}
+
+.btn-mail:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 
 /* Entry list */
 .list-header {
