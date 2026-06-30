@@ -145,7 +145,7 @@ window.sendEmail = (id) => {
         "higor.sombini@indaiatuba.sp.gov.br"
     ].join(",");
 
-    const subject = `Timesheet - ${start.toLocaleDateString()}`;
+    const subject = `Hora extra - ${start.toLocaleDateString()}`;
 
     const body = `Bom dia, espero que este e-mail o(a) encontre bem,
 
