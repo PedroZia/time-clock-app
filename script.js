@@ -141,7 +141,7 @@ window.sendEmail = (id) => {
     const start = new Date(entry.start);
     const end = new Date(entry.end);
 
-    const to = "edimara@indaiatuba.sp.gov.br";
+    const to = "edmara.garcia@indaiatuba.sp.gov.br";
     const cc = [
         "fernando.valim@indaiatuba.sp.gov.br",
         "higor.sombini@indaiatuba.sp.gov.br"
