@@ -22,20 +22,6 @@
   --danger-hover: #ff5533;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0a0a0a;
-    --surface: #1a1a1a;
-    --text: #d4d4d4;
-    --text-muted: #888888;
-    --border: #333333;
-    --accent: #ff4422;
-    --accent-hover: #ff5533;
-    --danger: #ff4422;
-    --danger-hover: #ff5533;
-  }
-}
-
 * { margin: 0; padding: 0; box-sizing: border-box; border-radius: 0; }
 
 body {
@@ -108,7 +94,7 @@ label {
 }
 
 input[type="datetime-local"], input[type="text"], select {
-  width: 90%;
+  width: 100%;
   padding: 10px 12px;
   border: 2px solid var(--border);
   background: var(--bg);
