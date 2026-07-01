@@ -85,13 +85,15 @@
       <button class="btn-icon" id="closeSettingsBtn" aria-label="Close">&#10005;</button>
     </div>
     <div class="modal-body">
-      <div class="config-field">
-        <label for="cfgName">Name</label>
-        <input type="text" id="cfgName">
-      </div>
-      <div class="config-field">
-        <label for="cfgCode">Code</label>
-        <input type="text" id="cfgCode">
+      <div class="config-row">
+        <div class="config-field config-field-wide">
+          <label for="cfgName">Name</label>
+          <input type="text" id="cfgName">
+        </div>
+        <div class="config-field config-field-narrow">
+          <label for="cfgCode">Code</label>
+          <input type="text" id="cfgCode">
+        </div>
       </div>
       <div class="config-field">
         <label for="cfgTo">To</label>
@@ -102,12 +104,20 @@
         <div id="ccList"></div>
         <button class="btn-secondary btn-sm" id="addCcBtn">+ Add CC</button>
       </div>
+      <div class="config-field">
+        <label for="cfgBody">Body</label>
+        <textarea id="cfgBody" rows="6"></textarea>
+        <span class="config-hint">Placeholders: {entries}, {total}, {nome}</span>
+      </div>
       <div class="config-actions">
+        <button class="btn-secondary" id="importConfigBtn">Import Config</button>
+        <button class="btn-secondary" id="exportConfigBtn">Export Config</button>
         <button class="btn-primary" id="saveConfigBtn">Save</button>
       </div>
     </div>
   </div>
 </div>
+<input type="file" id="importConfigFile" accept=".json" style="display:none">
 
 <script src="script.js"></script>
 </body>

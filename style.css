@@ -492,6 +492,14 @@ button {
   letter-spacing: 0.03em;
 }
 
+.config-row {
+  display: flex;
+  gap: 12px;
+}
+
+.config-field-wide { flex: 1; }
+.config-field-narrow { flex: 0 0 120px; }
+
 .config-field input {
   width: 100%;
   padding: 10px 12px;
@@ -505,6 +513,30 @@ button {
 .config-field input:focus {
   outline: 3px solid var(--accent);
   border-color: var(--accent);
+}
+
+.config-field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.config-field textarea:focus {
+  outline: 3px solid var(--accent);
+  border-color: var(--accent);
+}
+
+.config-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-style: italic;
 }
 
 .cc-row {

@@ -14,13 +14,15 @@ function getConfig() {
   let cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
   if (!cfg) {
     cfg = {
-      nome: "Pedro Paulo Zia",
-      codigo: "14890",
-      to: "edmara.garcia@indaiatuba.sp.gov.br",
+      nome: "João da Silva",
+      codigo: "99999",
+      to: "pessoa1@indaiatuba.sp.gov.br",
       cc: [
-        "fernando.valim@indaiatuba.sp.gov.br",
-        "higor.sombini@indaiatuba.sp.gov.br"
-      ]
+        "pessoa2@indaiatuba.sp.gov.br",
+        "pessoa3@indaiatuba.sp.gov.br",
+        "pessoa4@indaiatuba.sp.gov.br"
+      ],
+      emailBody: "Bom dia, espero que este e-mail o(a) encontre bem,\n\nGostaria de registrar as seguintes horas extras:\n\n{entries}\n\nTotal: {total}\n\nAtenciosamente,\n{nome}"
     };
     localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
   }
@@ -66,6 +68,7 @@ function openSettings() {
   document.getElementById('cfgName').value = config.nome;
   document.getElementById('cfgCode').value = config.codigo;
   document.getElementById('cfgTo').value = config.to;
+  document.getElementById('cfgBody').value = config.emailBody || '';
   renderCcFields();
   document.getElementById('settingsOverlay').classList.add('open');
 }
@@ -101,8 +104,45 @@ document.getElementById('saveConfigBtn').addEventListener('click', () => {
   config.codigo = document.getElementById('cfgCode').value.trim();
   config.to = document.getElementById('cfgTo').value.trim();
   config.cc = [...document.querySelectorAll('#ccList input')].map(i => i.value.trim()).filter(Boolean);
+  config.emailBody = document.getElementById('cfgBody').value;
   saveConfig();
   closeSettings();
+});
+
+// Import Config
+document.getElementById('importConfigBtn').addEventListener('click', () => {
+  document.getElementById('importConfigFile').click();
+});
+
+document.getElementById('importConfigFile').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const imported = JSON.parse(reader.result);
+      if (imported.nome !== undefined) config.nome = imported.nome;
+      if (imported.codigo !== undefined) config.codigo = imported.codigo;
+      if (imported.to !== undefined) config.to = imported.to;
+      if (imported.cc !== undefined) config.cc = imported.cc;
+      if (imported.emailBody !== undefined) config.emailBody = imported.emailBody;
+      saveConfig();
+      openSettings();
+      alert('Config imported.');
+    } catch { alert('Invalid config file.'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+// Export Config
+document.getElementById('exportConfigBtn').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `timeclock-config-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
 });
 
 // Filter
@@ -384,16 +424,10 @@ function doEmail() {
   }).join("\n");
 
   const subject = `Horas extras - ${selected.length} registro(s)`;
-  const body = `Bom dia, espero que este e-mail o(a) encontre bem,
-
-Gostaria de registrar as seguintes horas extras:
-
-${lines}
-
-Total: ${fmtDuration(totalMs)}
-
-Atenciosamente,
-${config.nome}`;
+  const body = (config.emailBody || 'Bom dia, espero que este e-mail o(a) encontre bem,\n\nGostaria de registrar as seguintes horas extras:\n\n{entries}\n\nTotal: {total}\n\nAtenciosamente,\n{nome}')
+    .replace('{entries}', lines)
+    .replace('{total}', fmtDuration(totalMs))
+    .replace('{nome}', config.nome);
 
   window.location.href =
     `mailto:${to}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
